@@ -49,7 +49,7 @@ namespace Modules.WheelOfFortuneSystem.Controllers
         private List<WheelOfFortuneItemController> _wofItems;
 
         private List<Reward> _currentRewards;
-        private int _currentSpinCount = 29;
+        private int _currentSpinCount;
         private int _currentRewardIndex;
 
         private EWOFState _wofState;
@@ -226,7 +226,7 @@ namespace Modules.WheelOfFortuneSystem.Controllers
 
         private void SetGiveUpButton(bool active)
         {
-            if (_currentSpinCount == 0)
+            if (_currentSpinCount == 0 || _wofType == EWOFType.Bronze)
             {
                 _giveUpButton.transform.localScale = Vector3.zero;
                 return;

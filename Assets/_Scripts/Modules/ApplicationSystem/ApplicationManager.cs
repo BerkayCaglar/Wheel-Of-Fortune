@@ -12,6 +12,7 @@ namespace WheelOfFortune.Modules.ApplicationSystem
         [Button("Start")]
         private async void Start()
         {
+            Application.targetFrameRate = 60;
             await ScriptableAPI.Init();
             InventoryManager.Init();
             await UniTask.Delay(5000);
