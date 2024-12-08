@@ -33,7 +33,8 @@ namespace Modules.YouLosePopup
 
         private async void Init()
         {
-            if (!InventoryManager.HasAmount(ERewardType.Cash, 200)) { _reviveButton.interactable = false; }
+            if (!InventoryManager.HasAmount(ERewardType.Cash, 1000000)) { _reviveButton.interactable = false; }
+            else { _reviveButton.interactable = true; }
             await Show();
         }
 

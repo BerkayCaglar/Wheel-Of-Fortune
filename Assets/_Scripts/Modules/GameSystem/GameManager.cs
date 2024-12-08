@@ -55,17 +55,14 @@ namespace WheelOfFortune.Modules.GameSystem
 
         private void OnReviveButtonClicked()
         {
-            InventoryManager.RemoveItemAmount(ERewardType.Cash, 200);
+            InventoryManager.RemoveItemAmount(ERewardType.Cash, 1000000);
             EventManager.InvokeRevivePlayer();
         }
 
         private void OnGiveUpButtonClicked()
         {
-#if UNITY_EDITOR
-            UnityEditor.EditorApplication.isPlaying = false;
-#else
-            Application.Quit();
-#endif
+            InventoryManager.ClearItems();
+            EventManager.InvokeResetPlayer();
         }
     }
 }

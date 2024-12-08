@@ -13,6 +13,7 @@ namespace WheelOfFortune.Modules.EventSystem
         public static Action OnGiveUpButtonClicked;
 
         public static Action OnRevivePlayer;
+        public static Action OnResetPlayer;
 
         public static void InvokeSpinWheelResult(Reward reward)
         {
@@ -37,6 +38,11 @@ namespace WheelOfFortune.Modules.EventSystem
         public static void InvokeRevivePlayer()
         {
             OnRevivePlayer?.Invoke();
+        }
+
+        public static void InvokeResetPlayer()
+        {
+            OnResetPlayer?.Invoke();
         }
     }
 }

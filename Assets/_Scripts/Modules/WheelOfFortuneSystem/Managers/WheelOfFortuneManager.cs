@@ -19,8 +19,8 @@ namespace Modules.WheelOfFortuneSystem.Managers
                 var reward = rewards[i];
                 var amount = reward.RewardType switch
                 {
-                    ERewardType.Cash => Random.Range(100, 1000000) * Mathf.Pow(spinCount, 2) / 2,
-                    ERewardType.Gold => Random.Range(10, 10000) * Mathf.Pow(spinCount, 2) / 2,
+                    ERewardType.Cash => Random.Range(100, 100000) * Mathf.Pow(spinCount, 2) / 2,
+                    ERewardType.Gold => Random.Range(10, 1000) * Mathf.Pow(spinCount, 2) / 2,
                     _ => 1
                 };
                 result.Add(new Reward(reward.RewardName, (int)amount, reward.RewardType, reward.RewardImage));
@@ -34,8 +34,8 @@ namespace Modules.WheelOfFortuneSystem.Managers
             if (spinCount == 0) { return EWOFType.Bronze; }
             return spinCount switch
             {
-                int n when n % 5 == 0 => EWOFType.Silver,
                 int n when n % 30 == 0 => EWOFType.Gold,
+                int n when n % 5 == 0 => EWOFType.Silver,
                 _ => EWOFType.Bronze
             };
         }

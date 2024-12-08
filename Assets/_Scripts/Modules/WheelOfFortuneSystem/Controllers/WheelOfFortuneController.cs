@@ -26,6 +26,9 @@ namespace Modules.WheelOfFortuneSystem.Controllers
         [SerializeField] private TextMeshProUGUI _wheelTypeText;
         [SerializeField] private TextMeshProUGUI _wheelUpToText;
 
+        [Space]
+        [SerializeField] private Button _giveUpButton;
+
         [SerializeField] private RectTransform _wofItemsHolder;
         [SerializeField] private Button _spinButton;
         [SerializeField] private GameObject _wofConffeti;
@@ -46,7 +49,7 @@ namespace Modules.WheelOfFortuneSystem.Controllers
         private List<WheelOfFortuneItemController> _wofItems;
 
         private List<Reward> _currentRewards;
-        private int _currentSpinCount;
+        private int _currentSpinCount = 29;
         private int _currentRewardIndex;
 
         private EWOFState _wofState;
@@ -59,18 +62,33 @@ namespace Modules.WheelOfFortuneSystem.Controllers
             await SetWheel();
         }
 
+        private async void Awake()
+        {
+            Init();
+            await SetWheel();
+        }
+
         private void OnDestroy()
         {
             EventManager.OnRevivePlayer -= async () => await SetWheel();
+            EventManager.OnResetPlayer -= async () => await ResetWheel();
         }
 
         private void Init()
         {
             _spinButton.onClick.RemoveAllListeners();
             _spinButton.onClick.AddListener(SpinWheel);
-            _wofItems = _wofItemsHolder.GetComponentsInChildren<WheelOfFortuneItemController>().ToList();
+            _wofItems = _wofItemsHolder.GetComponentsInChildren<WheelOfFortuneItemController>(true).ToList();
             _wofConffeti.SetActive(false);
             EventManager.OnRevivePlayer += async () => await SetWheel();
+            EventManager.OnResetPlayer += async () => await ResetWheel();
+        }
+
+        private async UniTask ResetWheel()
+        {
+            _currentSpinCount = 0;
+            _currentRewardIndex = 0;
+            await SetWheel();
         }
 
         private async UniTask SetWheel()
@@ -80,6 +98,7 @@ namespace Modules.WheelOfFortuneSystem.Controllers
             SetModel();
             SetView();
             await SetWOFItems();
+            SetGiveUpButton(true);
             AnimateSpinButton(EAnimationType.Result);
             _wofState = EWOFState.Initialized;
         }
@@ -116,8 +135,8 @@ namespace Modules.WheelOfFortuneSystem.Controllers
                     break;
             }
 
-            await _wheelTypeText.transform.DOPunchScale(new Vector3(0.1f, 0.1f, 0.1f), 0.5f, 10, 1).SetEase(Ease.OutQuart).AsyncWaitForCompletion();
             await _wofPanel.DOPunchScale(new Vector3(0.1f, 0.1f, 0.1f), 0.2f, 10, 1).SetEase(Ease.OutQuart).AsyncWaitForCompletion();
+            await _wheelTypeText.transform.DOPunchScale(new Vector3(0.1f, 0.1f, 0.1f), 0.5f, 10, 1).SetEase(Ease.OutQuart).AsyncWaitForCompletion();
             _wheelUpToText.text = $"Up to {differentRewardsCount} different rewards!";
             await _wheelUpToText.transform.DOPunchScale(new Vector3(0.1f, 0.1f, 0.1f), 0.2f, 10, 1).SetEase(Ease.OutQuart).AsyncWaitForCompletion();
         }
@@ -127,7 +146,8 @@ namespace Modules.WheelOfFortuneSystem.Controllers
             for (int i = 0; i < _wofItems.Count; i++)
             {
                 var item = _wofItems[i];
-                await item.PlayAnimation(EAnimationType.Out);
+                if (item.isActiveAndEnabled)
+                    await item.PlayAnimation(EAnimationType.Out);
                 item.Init(_currentRewards[i], i);
             }
 
@@ -165,6 +185,8 @@ namespace Modules.WheelOfFortuneSystem.Controllers
             float finalAngle = (4 * 360f) + (resultIndex * anglePerItem);
             var rotationDuration = 5f;
 
+            SetGiveUpButton(false);
+
             _wofPanel.DORotate(new Vector3(0, 0, finalAngle), rotationDuration, RotateMode.FastBeyond360).SetEase(Ease.OutQuart).OnComplete(async () =>
             {
                 _wofState = EWOFState.Result;
@@ -172,7 +194,7 @@ namespace Modules.WheelOfFortuneSystem.Controllers
                 ShakeSpin();
                 EventManager.InvokeSpinWheelResult(resultItem.Reward);
 
-                if (resultItem.Reward.Type == RewardSystem.Enum.ERewardType.Bomb) return;
+                if (resultItem.Reward.Type == ERewardType.Bomb) return;
 
                 _wofConffeti.SetActive(true);
                 await UniTask.Delay(1000);
@@ -196,7 +218,44 @@ namespace Modules.WheelOfFortuneSystem.Controllers
                         _spinButton.transform.DOPunchScale(new Vector3(0.1f, 0.1f, 0.1f), 0.5f, 10, 1).SetEase(Ease.OutQuart);
                     });
                     break;
+                case EAnimationType.Initial:
+                    _spinButton.transform.localScale = Vector3.zero;
+                    break;
             }
+        }
+
+        private void SetGiveUpButton(bool active)
+        {
+            if (_currentSpinCount == 0)
+            {
+                _giveUpButton.transform.localScale = Vector3.zero;
+                return;
+            }
+
+            if (!active)
+            {
+                _giveUpButton.onClick.RemoveAllListeners();
+                _giveUpButton.transform.DOScale(Vector3.zero, 0.2f).SetEase(Ease.OutQuart).OnComplete(() =>
+                {
+                    _giveUpButton.gameObject.SetActive(false);
+                });
+                return;
+            }
+
+            _giveUpButton.onClick.RemoveAllListeners();
+            _giveUpButton.gameObject.SetActive(true);
+            _giveUpButton.transform.DOScale(Vector3.one, 0.2f).SetEase(Ease.OutQuart).OnComplete(() =>
+            {
+                _giveUpButton.onClick.AddListener(() =>
+                {
+                    _giveUpButton.onClick.RemoveAllListeners();
+                    EventManager.InvokeGiveUpButtonClicked();
+                    _giveUpButton.transform.DOScale(Vector3.zero, 0.2f).SetEase(Ease.OutQuart).OnComplete(() =>
+                    {
+                        _giveUpButton.gameObject.SetActive(false);
+                    });
+                });
+            });
         }
 
         private void ShakeSpin()
